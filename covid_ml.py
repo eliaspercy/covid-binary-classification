@@ -170,7 +170,26 @@ def get_covid_dataset(download_url: str = DOWNLOAD_URL,
 
     # Extract the tarfile containing the dataset to the /data/ folder
     with tarfile.open(fileobj=filestream, mode="r|gz") as data_tgz:
-        data_tgz.extractall(path=dataset_path)
+        def is_within_directory(directory, target):
+            
+            abs_directory = os.path.abspath(directory)
+            abs_target = os.path.abspath(target)
+        
+            prefix = os.path.commonprefix([abs_directory, abs_target])
+            
+            return prefix == abs_directory
+        
+        def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+        
+            for member in tar.getmembers():
+                member_path = os.path.join(path, member.name)
+                if not is_within_directory(path, member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
+        
+            tar.extractall(path, members, numeric_owner=numeric_owner) 
+            
+        
+        safe_extract(data_tgz, path=dataset_path)
 
 
 def load_covid_dataset_naive(path: str = DATASET_PATH,
